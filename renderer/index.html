@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Smart Notes</title>
-  </head>
-  <body>
-    <h1>Welcome to Smart Notes</h1>
-    <button id="createNote">Create New Note</button>
-    <button id="openSettings">Settings</button>
-    <button id="openNotesFile">Open Notes File</button>
 
-    <ul id="notesList"></ul>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Smart Notes</title>
+</head>
 
-    <!-- Note Modal -->
-    <div
-      id="noteModal"
-      style="
+<body>
+  <h1>Welcome to Smart Notes</h1>
+  <input type="text" id="searchInput" placeholder="Search notes..." />
+  <br /><br />
+  <button id="createNote">Create New Note</button>
+  <button id="openSettings">Settings</button>
+  <button id="openNotesFile">Open Notes File</button>
+  <button id="clearNotes">Clear All Notes</button>
+
+  <ul id="notesList"></ul>
+
+  <!-- Note Modal -->
+  <div id="noteModal" style="
         display: none;
         position: fixed;
         top: 50%;
@@ -26,28 +29,23 @@
         padding: 20px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
         border-radius: 8px;
-      "
-    >
-      <h2>Add a Note</h2>
-      <input
-        type="text"
-        id="noteInput"
-        placeholder="Enter note text"
-        style="width: 100%; padding: 5px"
-      />
-      <br /><br />
-      <button id="saveNoteBtn">Save</button>
-      <button id="cancelNoteBtn">Cancel</button>
-    </div>
-    <style>
-      body {
-        font-family: sans-serif;
-      }
+      ">
+    <h2>Add a Note</h2>
+    <input type="text" id="noteInput" placeholder="Enter note text" style="width: 100%; padding: 5px" />
+    <br /><br />
+    <button id="saveNoteBtn">Save</button>
+    <button id="cancelNoteBtn">Cancel</button>
+  </div>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
 
-      #notesList li {
-        margin: 5px 0;
-      }
-    </style>
-    <script src="renderer.js"></script>
-  </body>
+    #notesList li {
+      margin: 5px 0;
+    }
+  </style>
+  <script src="renderer.js"></script>
+</body>
+
 </html>

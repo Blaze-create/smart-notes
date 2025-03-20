@@ -1,106 +1,119 @@
-// Importing necessary modules from Electron
-const { app, BrowserWindow, ipcMain } = require("electron");
+// Importing necessary modules from Electron and Node.js
+const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
 
 let mainWindow; // Main application window
 let settingsWindow; // Settings modal window
 
-// File path for saving/loading notes
+// File path where notes will be saved (inside userData folder specific to OS)
 const notesFilePath = path.join(app.getPath("userData"), "notes.json");
 
-// Function to read notes from file
+// ==========================
+// Function to load notes from file
 function loadNotes() {
   try {
-    const data = fs.readFileSync(notesFilePath, "utf8");
-    return JSON.parse(data);
+    const data = fs.readFileSync(notesFilePath, "utf8"); // Read file content
+    return JSON.parse(data); // Parse JSON and return
   } catch (err) {
-    return []; // Return an empty array if no notes are found
+    return []; // If file doesn't exist or error occurs, return empty array
   }
 }
 
 // Function to save notes to file
 function saveNotes(notes) {
   try {
-    fs.writeFileSync(notesFilePath, JSON.stringify(notes, null, 2));
+    fs.writeFileSync(notesFilePath, JSON.stringify(notes, null, 2)); // Save notes as formatted JSON
   } catch (err) {
     console.error("Failed to save notes", err);
   }
 }
 
+// ==========================
 // Function to create the main window
 function createWindow() {
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"), // Preload script to enable secure communication
-      nodeIntegration: false, // Disables direct access to Node.js APIs in renderer (security best practice)
-      contextIsolation: true, // Ensures renderer runs in separate context from main process
+      preload: path.join(__dirname, "preload.js"), // Preload script (secure API exposure)
+      nodeIntegration: false, // Prevent direct Node access in renderer
+      contextIsolation: true, // Isolate renderer & preload contexts
     },
   });
 
-  mainWindow.openDevTools(); // Opens Developer Tools for debugging
-  // mainWindow.maximize(); 3// Maximizes the window on launch
-  mainWindow.loadFile("./renderer/index.html"); // Loads the main HTML file
+  // Optional DevTools & maximizing
+  mainWindow.openDevTools();
+  // mainWindow.maximize();
 
-  // Load existing notes when app starts
+  mainWindow.loadFile("./renderer/index.html"); // Load renderer's main HTML
+
+  // Once the main window finishes loading:
   mainWindow.webContents.on("did-finish-load", () => {
+    // Send loaded notes to renderer process
     mainWindow.webContents.send("load-notes", loadNotes());
   });
 }
 
-// When Electron has finished initialization, create the main window
+// ==========================
+// Electron app lifecycle events:
+
+// When Electron is ready → create main window
 app.whenReady().then(createWindow);
 
-// Quit the app when all windows are closed (except on macOS)
+// When all windows are closed → quit app (except on macOS)
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
-// On macOS, recreate the window if dock icon is clicked and no windows are open
+// On macOS → reopen window when app icon is clicked and no windows are open
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
 });
 
-// IPC: Handle saving notes
+// ==========================
+// IPC Event Listeners:
+
+// Handle 'save-notes' event: Save notes to file
 ipcMain.on("save-notes", (event, notes) => {
   saveNotes(notes);
 });
 
-// IPC: Handle opening notes file dialog
+// Handle 'open-notes-file' event: Open the saved notes file location
 ipcMain.on("open-notes-file", () => {
-  shell.openPath(notesFilePath);
+  shell.openPath(notesFilePath); // Opens in default file explorer
 });
-// Listen for an IPC event 'open-settings' from renderer to open settings window
+
+// ==========================
+// Handle opening Settings window
 ipcMain.on("open-settings", () => {
   if (settingsWindow) {
-    // If settings window is already open, do nothing
+    // If settings already open → do nothing
     return;
   }
 
-  // Create the settings modal window
+  // Create a modal Settings window
   settingsWindow = new BrowserWindow({
     width: 400,
     height: 300,
-    parent: mainWindow, // Make it a child of main window (modal)
-    modal: true, // Ensures user interacts only with settings until it's closed
+    parent: mainWindow, // Attach to main window
+    modal: true, // Modal behavior (blocks interaction with main window)
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"), // Preload script for settings window
+      preload: path.join(__dirname, "preload.js"), // Preload script
     },
   });
 
-  settingsWindow.loadFile("./renderer/settings.html"); // Load settings HTML file
+  settingsWindow.loadFile("./renderer/settings.html"); // Load settings HTML
 
-  // When settings window is closed, set reference to null to allow reopening
+  // Once closed → set settingsWindow to null so it can be reopened later
   settingsWindow.on("closed", () => {
     settingsWindow = null;
   });
 });
 
-// Listen for an IPC event 'close-settings' to close the settings window
+// Handle closing Settings window
 ipcMain.on("close-settings", () => {
   if (settingsWindow) {
-    settingsWindow.close(); // Close the settings window
+    settingsWindow.close();
   }
 });
